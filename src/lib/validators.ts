@@ -29,13 +29,14 @@ export function formatName(name: string): string {
   return formatted;
 }
 
-export function formatPhone(phone: string): string {
-  let cleaned = phone.replace(/\D/g, "");
+export function formatPhone(phone: unknown): string {
+  let cleaned = String(phone ?? "").replace(/\D/g, "");
   if (!cleaned.startsWith("55") && cleaned.length <= 11) {
     cleaned = "55" + cleaned;
   }
   return "+" + cleaned;
 }
+
 
 export function normalizeColumnName(header: string): string {
   const normalized = header.toLowerCase().trim();
