@@ -20,7 +20,7 @@ export function FileUpload({ onDataLoaded, onNext }: FileUploadProps) {
   const [success, setSuccess] = useState(false);
   const [recordCount, setRecordCount] = useState(0);
 
-  const processData = useCallback((data: Record<string, string>[]) => {
+  const processData = useCallback((data: Record<string, unknown>[]) => {
     if (data.length === 0) {
       setError("O arquivo está vazio");
       return;
@@ -34,11 +34,13 @@ export function FileUpload({ onDataLoaded, onNext }: FileUploadProps) {
       return;
     }
 
-    // Normalize column names for consistent access
+    // Normalize column names + coerce values to string (Excel may return numbers)
     const normalizedData = data.map((row) => {
       const normalized: Record<string, string> = {};
       for (const key of Object.keys(row)) {
-        normalized[normalizeColumnName(key)] = row[key];
+        const normalizedKey = normalizeColumnName(key);
+        const value = (row as Record<string, unknown>)[key];
+        normalized[normalizedKey] = value == null ? "" : String(value);
       }
       return normalized;
     });
@@ -66,7 +68,7 @@ export function FileUpload({ onDataLoaded, onNext }: FileUploadProps) {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          processData(results.data as Record<string, string>[]);
+          processData(results.data as Record<string, unknown>[]);
         },
         error: () => {
           setError("Erro ao processar arquivo CSV");
@@ -79,7 +81,7 @@ export function FileUpload({ onDataLoaded, onNext }: FileUploadProps) {
           const workbook = XLSX.read(e.target?.result, { type: "binary" });
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
-          const data = XLSX.utils.sheet_to_json(sheet) as Record<string, string>[];
+          const data = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
           processData(data);
         } catch {
           setError("Erro ao processar arquivo Excel");

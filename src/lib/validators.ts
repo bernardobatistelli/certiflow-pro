@@ -11,13 +11,13 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
   return { isValid: true };
 }
 
-export function validateCPF(cpf: string): boolean {
-  const cleaned = cpf.replace(/\D/g, "");
+export function validateCPF(cpf: unknown): boolean {
+  const cleaned = String(cpf ?? "").replace(/\D/g, "");
   return cleaned.length >= 1 && cleaned.length <= 11;
 }
 
-export function formatCPF(cpf: string): string {
-  let cleaned = cpf.replace(/\D/g, "");
+export function formatCPF(cpf: unknown): string {
+  let cleaned = String(cpf ?? "").replace(/\D/g, "");
   cleaned = cleaned.padStart(11, "0");
   return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
