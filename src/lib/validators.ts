@@ -37,9 +37,28 @@ export function formatPhone(phone: string): string {
   return "+" + cleaned;
 }
 
+export function normalizeColumnName(header: string): string {
+  const normalized = header.toLowerCase().trim();
+  
+  // Handle common variations
+  const mappings: Record<string, string> = {
+    "e-mail": "email",
+    "e_mail": "email",
+    "e mail": "email",
+    "phone": "telefone",
+    "fone": "telefone",
+    "tel": "telefone",
+    "name": "nome",
+    "certificate": "certificado",
+    "cert": "certificado",
+  };
+  
+  return mappings[normalized] || normalized;
+}
+
 export function validateRequiredColumns(headers: string[]): { valid: boolean; missing: string[] } {
   const required = ["nome", "cpf", "telefone", "email", "certificado"];
-  const normalized = headers.map(h => h.toLowerCase().trim());
+  const normalized = headers.map(normalizeColumnName);
   const missing = required.filter(col => !normalized.includes(col));
   
   return {

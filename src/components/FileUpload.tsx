@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Student } from "@/types/certificate";
-import { validateRequiredColumns } from "@/lib/validators";
+import { validateRequiredColumns, normalizeColumnName } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
@@ -34,13 +34,22 @@ export function FileUpload({ onDataLoaded, onNext }: FileUploadProps) {
       return;
     }
 
-    const students: Student[] = data.map((row, index) => ({
+    // Normalize column names for consistent access
+    const normalizedData = data.map((row) => {
+      const normalized: Record<string, string> = {};
+      for (const key of Object.keys(row)) {
+        normalized[normalizeColumnName(key)] = row[key];
+      }
+      return normalized;
+    });
+
+    const students: Student[] = normalizedData.map((row, index) => ({
       id: `student-${index}`,
-      nome: row.nome || row.Nome || row.NOME || "",
-      cpf: row.cpf || row.Cpf || row.CPF || "",
-      telefone: row.telefone || row.Telefone || row.TELEFONE || row.phone || "",
-      email: row.email || row.Email || row.EMAIL || "",
-      certificado: row.certificado || row.Certificado || row.CERTIFICADO || "",
+      nome: row.nome || "",
+      cpf: row.cpf || "",
+      telefone: row.telefone || "",
+      email: row.email || "",
+      certificado: row.certificado || "",
     }));
 
     setError(null);
