@@ -1,11 +1,12 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Send, CheckCircle, XCircle, Loader2, Pause, Play, Download, Clock, RotateCcw } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { Send, CheckCircle, XCircle, Loader2, Pause, Play, Download, Clock, RotateCcw, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CertificateConfig, ProcessedStudent, SendResult } from "@/types/certificate";
+import { generateCertificatePDF } from "@/lib/pdfGenerator";
 
 interface SendProcessorProps {
   webhookUrl: string;
@@ -33,6 +34,7 @@ export function SendProcessor({
   const [isPaused, setIsPaused] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<string>("");
   const pauseRef = useRef(false);
   const abortRef = useRef(false);
 
@@ -53,6 +55,11 @@ export function SendProcessor({
 
   const sendToWebhook = async (student: ProcessedStudent, retryCount: number = 0): Promise<SendResult> => {
     try {
+      // Generate PDF for this student
+      setCurrentStatus(`Gerando PDF para ${student.nome}...`);
+      const pdfBase64 = await generateCertificatePDF(student, certificateImage, config);
+
+      setCurrentStatus(`Enviando ${student.nome}...`);
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -65,14 +72,7 @@ export function SendProcessor({
             email: student.email,
             telefone: student.telefone,
           },
-          certificadoTemplate: certificateImage,
-          config: {
-            posX: config.posX,
-            posY: config.posY,
-            fontSize: config.fontSize,
-            fontFamily: config.fontFamily,
-            fontColor: config.fontColor,
-          },
+          certificadoPDF: pdfBase64,
         }),
       });
 
@@ -249,7 +249,10 @@ export function SendProcessor({
             {isProcessing && results.length < validStudents.length && (
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando {currentIndex + 1} de {validStudents.length}...
+                <div className="flex flex-col">
+                  <span>Processando {currentIndex + 1} de {validStudents.length}</span>
+                  {currentStatus && <span className="text-xs flex items-center gap-1"><FileText className="w-3 h-3" /> {currentStatus}</span>}
+                </div>
               </div>
             )}
             {results.map((result, index) => (
