@@ -1,73 +1,178 @@
-# Welcome to your Lovable project
+# 📜 Sistema de Emissão de Certificados
 
-## Project info
+Sistema automatizado para geração e envio em massa de certificados personalizados, integrado com o Make (Integromat) para automação de workflows.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🎯 Visão Geral
 
-## How can I edit this code?
+Este sistema permite:
+- Upload de planilhas CSV/Excel com dados de alunos
+- Validação e formatação automática de dados (CPF, telefone, email)
+- Personalização do certificado com posicionamento de texto configurável
+- Geração de PDFs personalizados para cada aluno
+- Envio automático via webhook para o Make
 
-There are several ways of editing your application.
+## 🔄 Fluxo de Trabalho
 
-**Use Lovable**
+### Etapas do Sistema
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+```
+1. Configuração do Webhook
+   ↓
+2. Upload da Planilha
+   ↓
+3. Processamento dos Dados
+   ↓
+4. Configuração do Certificado
+   ↓
+5. Envio em Massa
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+### 1. Configuração do Webhook
+- Cole a URL do webhook do Make
+- Teste a conexão antes de prosseguir
 
-**Use your preferred IDE**
+### 2. Upload da Planilha
+A planilha deve conter as seguintes colunas:
+| Coluna | Descrição |
+|--------|-----------|
+| `nome` | Nome completo do aluno |
+| `cpf` | CPF do aluno (com ou sem formatação) |
+| `telefone` | Número de telefone/WhatsApp |
+| `email` | E-mail do aluno |
+| `certificado` | "SIM" para emitir, qualquer outro valor para ignorar |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 3. Processamento dos Dados
+O sistema automaticamente:
+- Converte nomes para MAIÚSCULAS
+- Remove texto "copy" dos nomes
+- Formata CPF com máscara (XXX.XXX.XXX-XX)
+- Adiciona prefixo +55 em telefones brasileiros
+- Filtra apenas alunos com `certificado = "SIM"`
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 4. Configuração do Certificado
+- **Upload da imagem**: Envie a imagem base do certificado (PNG/JPG)
+- **Posição X/Y**: Ajuste onde o nome será posicionado
+- **Tamanho da fonte**: Configure o tamanho do texto
+- **Cor da fonte**: Escolha a cor do nome
+- **Preview em tempo real**: Visualize como ficará com o primeiro aluno
 
-Follow these steps:
+### 5. Envio em Massa
+- Pause/retome o envio a qualquer momento
+- Retry automático em caso de falha (máx. 3 tentativas)
+- Progresso em tempo real
+- Relatório final com sucessos e erros
+- Download do relatório em CSV
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🔗 Configuração do Make (Integromat)
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Criando o Webhook
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+1. Acesse o [Make](https://www.make.com/)
+2. Crie um novo cenário
+3. Adicione o módulo **Webhooks > Custom webhook**
+4. Copie a URL gerada
+5. Cole no campo de configuração do sistema
+
+### Estrutura do Payload Recebido
+
+O webhook receberá um POST com a seguinte estrutura JSON:
+
+```json
+{
+  "aluno": {
+    "nome": "JOÃO DA SILVA",
+    "cpf": "123.456.789-00",
+    "email": "joao@email.com",
+    "telefone": "+5511999999999"
+  },
+  "certificadoPDF": "data:application/pdf;base64,JVBERi0xLjQK..."
+}
+```
+
+### Campos do Payload
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `aluno.nome` | string | Nome formatado em maiúsculas |
+| `aluno.cpf` | string | CPF formatado (XXX.XXX.XXX-XX) |
+| `aluno.email` | string | E-mail validado |
+| `aluno.telefone` | string | Telefone com +55 |
+| `certificadoPDF` | string | PDF do certificado em base64 |
+
+### Exemplo de Cenário no Make
+
+```
+[Webhook] → [Decode Base64 PDF] → [Google Drive: Upload] → [Gmail: Enviar Email]
+```
+
+#### Módulos Sugeridos:
+
+1. **Webhooks > Custom webhook**
+   - Recebe os dados do sistema
+
+2. **Tools > Set variable** (opcional)
+   - Extraia o PDF do base64
+
+3. **Google Drive > Upload a File**
+   - Salve o certificado na nuvem
+   - Use o nome do aluno como nome do arquivo
+
+4. **Gmail > Send an Email**
+   - Envie o certificado por email
+   - Anexe o PDF salvo
+   - Personalize com o nome do aluno
+
+5. **WhatsApp Business / Twilio** (opcional)
+   - Envie notificação por WhatsApp
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **React 18** - Interface do usuário
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS** - Estilização
+- **shadcn/ui** - Componentes de UI
+- **jsPDF** - Geração de PDFs no frontend
+- **PapaParse** - Processamento de CSV
+- **xlsx** - Processamento de Excel
+
+## 📦 Instalação Local
+
+```bash
+# Clone o repositório
+git clone <URL_DO_REPOSITORIO>
+
+# Navegue até a pasta
+cd <NOME_DO_PROJETO>
+
+# Instale as dependências
+npm install
+
+# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 💡 Dicas de Uso
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Teste o webhook primeiro** antes de fazer upload da planilha
+2. **Use imagens de alta qualidade** para o certificado base
+3. **Verifique o preview** antes de iniciar o envio em massa
+4. **Mantenha a planilha limpa** - remova linhas vazias
+5. **Use o filtro "SIM"** na coluna certificado para controlar quem recebe
 
-**Use GitHub Codespaces**
+## ⚠️ Limitações
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Formatos de imagem suportados: PNG e JPG
+- O PDF é gerado no navegador (cliente)
+- Requer conexão estável para envio em massa
 
-## What technologies are used for this project?
+## 📄 Licença
 
-This project is built with:
+Este projeto é privado e de uso exclusivo.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Desenvolvido com ❤️ usando [Lovable](https://lovable.dev)
